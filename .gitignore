@@ -8,3 +8,5 @@ __pycache__/
 .venv/
 
 docs/
+
+.pytest_cache
