@@ -10,14 +10,20 @@ when an engine needs maintenance.
 
 Alert emails sent by the n8n workflow (shown in a Mailtrap sandbox inbox):
 
-<table>
+<table align="center">
   <tr>
-    <td align="center"><b>CRITICAL</b> — engine 34, predicted RUL 9 cycles</td>
-    <td align="center"><b>WARNING</b> — engine 35, predicted RUL 11 cycles</td>
+    <td align="center">
+      <b>CRITICAL</b> — engine 34, predicted RUL 9 cycles
+    </td>
   </tr>
   <tr>
-    <td><img src="docs/images/email_critical.png" alt="Critical maintenance alert email" width="420"></td>
-    <td><img src="docs/images/email_warning.png" alt="Warning maintenance alert email" width="420"></td>
+    <td align="center">
+      <p align="center">
+        <img src="docs/images/email_critical.png"
+             alt="Critical maintenance alert email"
+             width="600">
+      </p>
+    </td>
   </tr>
 </table>
 
