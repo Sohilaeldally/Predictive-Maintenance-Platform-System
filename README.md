@@ -132,8 +132,7 @@ PMPS/
     │   ├── main.py             # FastAPI app
     │   ├── routes/             # HTTP layer (predictions, simulations)
     │   └── services/           # Business logic (prediction_service, alerts)
-    └── test/
-        └── test_simulation_save.py
+
 ```
 
 ## Setup
