@@ -21,7 +21,7 @@ Alert emails sent by the n8n workflow (shown in a Mailtrap sandbox inbox):
       <p align="center">
         <img src="docs/images/email_critical.png"
              alt="Critical maintenance alert email"
-             width="600">
+             width="800">
       </p>
     </td>
   </tr>
@@ -259,8 +259,17 @@ see predicted vs actual RUL with the WARNING / CRITICAL threshold lines, the
 MAE, and the first cycle where each status was reached. A second tab shows the
 latest prediction for every engine, colour-coded by status.
 
+**Simulation tab** — predicted vs actual RUL for one engine:
+
 <p align="center">
   <img src="docs/images/dashboard_simulation.png" alt="Simulation tab" width="800">
+</p>
+
+**Latest predictions tab** — status counts (CRITICAL / WARNING / NORMAL) and
+the colour-coded table for all engines:
+
+<p align="center">
+  <img src="docs/images/dashboard_latest.png" alt="Latest predictions tab" width="800">
 </p>
 
 Run it locally (the API must be up: `docker-compose up -d`):
