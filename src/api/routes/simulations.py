@@ -4,16 +4,11 @@ from api.services import prediction_service
 
 router = APIRouter(prefix="/simulations", tags=["simulations"])
 
+from uuid import UUID
 
 @router.get("/{simulation_id}")
-def simulation_predictions(simulation_id: str):
-    try:
-        rows = prediction_service.get_simulation_results(simulation_id)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=400,
-            detail="Could not retrieve simulation results. Check the simulation ID.",
-        ) from exc
+def simulation_predictions(simulation_id: UUID):
+    rows = prediction_service.get_simulation_results(str(simulation_id))
 
     if not rows:
         raise HTTPException(
@@ -22,7 +17,6 @@ def simulation_predictions(simulation_id: str):
         )
 
     return rows
-
 
 @router.post("/{engine_id}")
 def create_simulation(engine_id: int):
