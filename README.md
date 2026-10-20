@@ -21,7 +21,7 @@ Alert emails sent by the n8n workflow (shown in a Mailtrap sandbox inbox):
       <p align="center">
         <img src="docs/images/email_critical.png"
              alt="Critical maintenance alert email"
-             width="800">
+             width="600">
       </p>
     </td>
   </tr>
@@ -111,6 +111,7 @@ PMPS/
 │   └── schema.sql              # sensor_readings, predictions, simulation_predictions
 ├── dashboard/
 │   ├── app.py                  # Streamlit dashboard (talks to the API only)
+│   ├── Dockerfile
 │   └── requirements.txt
 ├── docs/
 │   └── images/                 # Demo screenshots (alert email, dashboard)
@@ -174,6 +175,7 @@ docker-compose up -d --build
 |---|---|---|
 | PostgreSQL | `predmaint_postgres` | `localhost:5433` (host) / `postgres:5432` (inside Docker) |
 | FastAPI | `predmaint_api` | http://localhost:8000 |
+| Dashboard | `predmaint_dashboard` | http://localhost:8501 |
 
 Interactive API docs: http://localhost:8000/docs
 
@@ -272,7 +274,10 @@ the colour-coded table for all engines:
   <img src="docs/images/dashboard_latest.png" alt="Latest predictions tab" width="800">
 </p>
 
-Run it locally (the API must be up: `docker-compose up -d`):
+With Docker it starts together with the API (`docker-compose up -d --build`)
+and is available at http://localhost:8501.
+
+Or run it locally (the API must be up):
 
 ```bash
 pip install -r dashboard/requirements.txt
