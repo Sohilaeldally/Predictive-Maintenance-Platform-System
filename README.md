@@ -109,8 +109,11 @@ PMPS/
 ├── .env.example                # Copy to .env and set POSTGRES_PASSWORD
 ├── database/
 │   └── schema.sql              # sensor_readings, predictions, simulation_predictions
+├── dashboard/
+│   ├── app.py                  # Streamlit dashboard (talks to the API only)
+│   └── requirements.txt
 ├── docs/
-│   └── images/                 # Demo screenshots of the alert emails
+│   └── images/                 # Demo screenshots (alert email, dashboard)
 ├── data/                       # C-MAPSS FD001 files
 ├── models/                     # Trained XGBoost models (v1, v2, v3)
 ├── notebooks/
@@ -248,6 +251,29 @@ RUL using only the data available up to that cycle. Each run gets its own
 `simulation_id` (UUID), so the same engine can be simulated many times
 without overwriting earlier runs. Results are stored in
 `simulation_predictions` and can be compared against the true RUL.
+
+## Dashboard
+
+A Streamlit dashboard on top of the API: pick an engine, run a simulation, and
+see predicted vs actual RUL with the WARNING / CRITICAL threshold lines, the
+MAE, and the first cycle where each status was reached. A second tab shows the
+latest prediction for every engine, colour-coded by status.
+
+<p align="center">
+  <img src="docs/images/dashboard_simulation.png" alt="Simulation tab" width="800">
+</p>
+
+Run it locally (the API must be up: `docker-compose up -d`):
+
+```bash
+pip install -r dashboard/requirements.txt
+streamlit run dashboard/app.py
+```
+
+It opens at http://localhost:8501. To point it at another API, set the
+`API_URL` environment variable (default `http://localhost:8000`). The
+threshold lines in the sidebar only affect the chart; keep them equal to the
+values in `src/api/services/alerts.py`.
 
 ## n8n alert automation
 
