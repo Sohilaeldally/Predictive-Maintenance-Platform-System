@@ -1,5 +1,7 @@
 # PMPS — Predictive Maintenance Platform System
 
+[![CI](https://github.com/Sohilaeldally/PMPS/actions/workflows/ci.yml/badge.svg)](https://github.com/Sohilaeldally/PMPS/actions/workflows/ci.yml)
+
 End-to-end predictive maintenance pipeline for turbofan jet engines, built on
 NASA's C-MAPSS (FD001) dataset. It predicts each engine's **Remaining Useful
 Life (RUL)** from sensor readings, stores predictions in PostgreSQL, serves
@@ -21,7 +23,7 @@ Alert emails sent by the n8n workflow (shown in a Mailtrap sandbox inbox):
       <p align="center">
         <img src="docs/images/email_critical.png"
              alt="Critical maintenance alert email"
-             width="600">
+             width="800">
       </p>
     </td>
   </tr>
@@ -109,6 +111,7 @@ PMPS/
 ├── .env.example                # Copy to .env and set POSTGRES_PASSWORD
 ├── database/
 │   └── schema.sql              # sensor_readings, predictions, simulation_predictions
+├── .github/workflows/ci.yml    # CI: tests + Docker builds
 ├── dashboard/
 │   ├── app.py                  # Streamlit dashboard (talks to the API only)
 │   ├── Dockerfile
