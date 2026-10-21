@@ -1,0 +1,9 @@
+# Only what the API container needs at runtime (used by the Dockerfile).
+# Keeps the image small and the build fast. Use requirements.txt for
+# development (notebooks, training, tests).
+pandas>=2.0.0
+numpy>=1.24.0
+xgboost-cpu>=2.1.0
+fastapi>=0.110.0
+uvicorn>=0.29.0
+psycopg2-binary>=2.9.9
