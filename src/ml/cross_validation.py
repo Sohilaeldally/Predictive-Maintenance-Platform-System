@@ -15,7 +15,7 @@ import pandas as pd
 from sklearn.model_selection import GroupKFold
 from xgboost import XGBRegressor
 
-from config import ROLLING_SENSORS, ROLLING_WINDOWS
+from config import DATA_DIR, ROLLING_SENSORS, ROLLING_WINDOWS
 from ml.preprocessing import (
     cap_rul,
     clean_train_rolling_pipeline,
@@ -25,6 +25,7 @@ from ml.training import evaluate_model
 
 N_SPLITS = 5
 RUL_CAP = 125
+ALERT_ZONE = 30  # also report the error where it matters for alerts
 
 MODEL_PARAMS = dict(
     n_estimators=200,
@@ -40,7 +41,7 @@ MODEL_PARAMS = dict(
 
 def run_cross_validation() -> pd.DataFrame:
     train = clean_train_rolling_pipeline(
-        "../data/train_FD001.txt",
+        str(DATA_DIR / "train_FD001.txt"),
         sensors=ROLLING_SENSORS,
         windows=ROLLING_WINDOWS,
     )
@@ -64,6 +65,10 @@ def run_cross_validation() -> pd.DataFrame:
 
         metrics = evaluate_model(y.iloc[val_idx], pred, model_name=f"Fold {fold}")
         metrics["val_engines"] = groups.iloc[val_idx].nunique()
+
+        y_true = y.iloc[val_idx].values
+        zone = y_true <= ALERT_ZONE
+        metrics["MAE_alert_zone"] = float(np.abs(y_true[zone] - pred[zone]).mean())
         results.append(metrics)
 
     return pd.DataFrame(results)
@@ -73,8 +78,8 @@ if __name__ == "__main__":
     df = run_cross_validation()
 
     print("\n=== Engine-level GroupKFold results ===")
-    print(df[["model", "val_engines", "RMSE", "MAE", "R2"]].round(2).to_string(index=False))
+    print(df[["model", "val_engines", "RMSE", "MAE", "R2", "MAE_alert_zone"]].round(2).to_string(index=False))
 
     print("\nMean +- std over folds")
-    for col in ["RMSE", "MAE", "R2"]:
-        print(f"{col:5s}: {df[col].mean():.2f} +- {df[col].std():.2f}")
+    for col in ["RMSE", "MAE", "R2", "MAE_alert_zone"]:
+        print(f"{col:15s}: {df[col].mean():.2f} +- {df[col].std():.2f}")

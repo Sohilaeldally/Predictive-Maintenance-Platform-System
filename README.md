@@ -81,41 +81,25 @@ The RUL cap (v3) gave the biggest improvement: early in an engine's life the
 sensors show no degradation, so predicting an exact large RUL is not possible
 and capping the target at 125 removes that noise.
 
-### Cross-validation
-
-To check that the result is not a lucky split, the v3 model was also validated
-with 5-fold **GroupKFold on the training set, grouped by engine** (all rows of
-an engine stay in the same fold, so there is no leakage between cycles of the
-same engine). Reproduce with `cd src && python -m ml.cross_validate`.
-
-| Metric (all cycles, mean ± std over 5 folds) | Value |
-|---|---|
-| RMSE | 16.71 ± 0.70 |
-| MAE | 12.02 ± 0.59 |
-| R² | 0.84 ± 0.01 |
-| MAE where true RUL ≤ 30 (the alert zone) | 7.65 ± 1.29 |
-
-The cross-validation error is stable across folds and close to the test-set
-RMSE (18.12). The test number is a bit higher because it is measured only at
-each engine's last observed cycle, which is a harder point than the average cycle.
-
 ### Cross-validation (engine-level)
 
 To check that the v3 result is not a lucky split, the model was evaluated with
-5-fold `GroupKFold` on the training set, grouped by engine (each fold tests on
-20 engines the model has never seen; `python -m ml.cross_validation` from
-`src/`):
+5-fold `GroupKFold` on the training set, grouped by engine: all rows of an
+engine stay in the same fold, so each fold is tested on 20 engines the model
+has never seen. Reproduce with `cd src && python -m ml.cross_validation`.
 
-| Metric | Mean ± std over 5 folds |
+| Metric (mean ± std over 5 folds) | Value |
 |---|---|
 | RMSE | 16.71 ± 0.78 |
 | MAE | 12.02 ± 0.66 |
 | R² | 0.84 ± 0.01 |
+| MAE where true RUL ≤ 30 (the alert zone) | 7.65 ± 1.44 |
 
-The scores are stable across folds. They are slightly better than the test-set
-numbers above because CV scores every cycle of an engine's life (many easy,
-healthy cycles), while the test set scores only the last observed cycle of
-each engine, which is the hard, near-failure part.
+The scores are stable across folds and close to the test-set RMSE (18.12). The
+test number is a bit higher because it is measured only at each engine's last
+observed cycle, a harder point than the average cycle. Near failure (RUL ≤ 30)
+the error is smaller, about 7.7 cycles on average, which is the zone that
+matters for alerts.
 
 **Limitations:** trained and evaluated on FD001 only (one operating condition,
 one fault mode); predicts from the latest cycle's features and rolling
@@ -173,7 +157,6 @@ PMPS/
     │   ├── preprocessing.py
     │   ├── training.py
     │   ├── cross_validation.py   # Engine-level GroupKFold evaluation
-    │   ├── cross_validate.py   # Engine-level GroupKFold validation
     │   ├── predict.py
     │   └── xgboost_v1.py / xgboost_v2.py / xgboost_v3.py
     ├── db/                     # Everything that touches PostgreSQL
