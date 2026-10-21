@@ -76,7 +76,7 @@ each) — see `notebooks/05_test_evaluation.ipynb`:
 | v1 | 25.29 | 18.32 | 0.63 | 5228 |
 | v2 | 25.62 | 19.03 | 0.62 | 4741 |
 | v3 (XGBoost, used by the API) | 18.12 | 13.48 | 0.81 | 619 |
-| GRU (comparison, not deployed) | **14.83** | **11.15** | **0.87** | **406** |
+| GRU (optional, `MODEL_TYPE=gru`) | **14.83** | **11.15** | **0.87** | **406** |
 
 The RUL cap (v3) gave the biggest improvement: early in an engine's life the
 sensors show no degradation, so predicting an exact large RUL is not possible
@@ -92,11 +92,30 @@ engine's last cycle against the true RUL. The best epoch is chosen on held-out
 average of 3 seeds. Reproduce with `cd src && python -m ml.gru_model` (needs
 `pip install torch`, about 7 minutes on CPU).
 
-The GRU is clearly better (RMSE 14.83 vs 18.12, C-MAPSS score 406 vs 619), so
-the temporal pattern carries information the rolling features only partly
-capture. XGBoost is still what the API serves because it is tiny, fast, needs
-no PyTorch in the Docker image, and its feature set is easy to inspect; moving
-the API to the GRU is the obvious next step if accuracy matters most.
+The GRU is clearly better (RMSE 14.83 vs 18.12, C-MAPSS score 406 vs 619). It
+is also better where it matters for alerts (`python -m ml.compare_alerts`,
+test set, last cycle of each engine):
+
+| | XGBoost v3 | GRU |
+|---|---|---|
+| MAE where true RUL ≤ 30 (alert zone) | 10.22 | **3.33** |
+| Engines really at RUL ≤ 15 caught as CRITICAL (of 10) | 8, 0 false alarms | 8, 0 false alarms |
+| Engines really at RUL ≤ 30 caught as WARNING or worse (of 25) | 18, 1 false alarm | **22**, 1 false alarm |
+
+**Which model does the API serve?** XGBoost by default: it is tiny and fast and
+needs no PyTorch. To serve the GRU instead, set in `.env`:
+
+```
+MODEL_TYPE=gru
+INSTALL_TORCH=1
+```
+
+and rebuild (`docker-compose up -d --build`). `INSTALL_TORCH=1` adds the CPU
+build of PyTorch to the API image; the trained GRU (3 seeds + scaler) is in
+`models/gru_v1.pt`. Without Docker, `pip install torch` and
+`MODEL_TYPE=gru uvicorn api.main:app` from `src/`. The thresholds, database
+and n8n workflow are unchanged. The GRU reads the engine's last 30 cycles, so
+for engines with a shorter history the first row is repeated as padding.
 
 ### Cross-validation (engine-level)
 
@@ -156,7 +175,7 @@ PMPS/
 ├── docs/
 │   └── images/                 # Demo screenshots (alert email, dashboard)
 ├── data/                       # C-MAPSS FD001 files
-├── models/                     # Trained XGBoost models (v1, v2, v3)
+├── models/                     # Trained models: XGBoost v1-v3, GRU (gru_v1.pt)
 ├── notebooks/
 │   ├── 01_train_eda.ipynb          # Training data exploration
 │   ├── 02_test_analysis.ipynb      # Test data analysis
@@ -174,7 +193,9 @@ PMPS/
     │   ├── preprocessing.py
     │   ├── training.py
     │   ├── cross_validation.py   # Engine-level GroupKFold evaluation
-    │   ├── gru_model.py          # GRU comparison model (needs PyTorch)
+    │   ├── gru_model.py          # Trains the GRU, saves models/gru_v1.pt
+    │   ├── gru_predict.py        # GRU inference (used when MODEL_TYPE=gru)
+    │   ├── compare_alerts.py     # XGBoost vs GRU on alert metrics
     │   ├── predict.py
     │   └── xgboost_v1.py / xgboost_v2.py / xgboost_v3.py
     ├── db/                     # Everything that touches PostgreSQL

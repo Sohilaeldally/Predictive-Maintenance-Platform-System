@@ -18,7 +18,8 @@ import pandas as pd
 import torch
 from torch import nn
 
-from config import DATA_DIR, MODEL_FEATURES
+from config import DATA_DIR, MODEL_FEATURES, MODELS_DIR
+from ml.gru_predict import build_regressor
 from ml.preprocessing import add_rul_test, add_rul_train, cap_rul, load_raw_data
 from ml.training import cmapss_score, evaluate_model, split_by_engine
 
@@ -29,6 +30,7 @@ EPOCHS = 40
 BATCH_SIZE = 256
 LEARNING_RATE = 1e-3
 N_SEEDS = 3
+MODEL_PATH = MODELS_DIR / "gru_v1.pt"
 
 # Raw inputs only: no rolling features (the GRU learns those itself) and no
 # time_cycles (keep the comparison about sensor behaviour).
@@ -54,27 +56,16 @@ def make_windows(df: pd.DataFrame, last_only: bool = False):
     return np.stack(X), np.array(y, dtype=np.float32), np.array(ids)
 
 
-class GRURegressor(nn.Module):
-    def __init__(self, n_features: int):
-        super().__init__()
-        self.gru = nn.GRU(n_features, HIDDEN, num_layers=2, batch_first=True, dropout=0.2)
-        self.head = nn.Sequential(nn.Linear(HIDDEN, 32), nn.ReLU(), nn.Linear(32, 1))
-
-    def forward(self, x):
-        out, _ = self.gru(x)
-        return self.head(out[:, -1]).squeeze(-1)  # use the last time step
-
-
 def predict(model, X: np.ndarray) -> np.ndarray:
     model.eval()
     with torch.no_grad():
         return model(torch.from_numpy(X)).numpy() * RUL_CAP
 
 
-def train_one(X_tr, y_tr, X_va, y_va, seed: int) -> GRURegressor:
+def train_one(X_tr, y_tr, X_va, y_va, seed: int):
     torch.manual_seed(seed)
     np.random.seed(seed)
-    model = GRURegressor(X_tr.shape[2])
+    model = build_regressor(X_tr.shape[2], HIDDEN)
     optimiser = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     loss_fn = nn.MSELoss()
 
@@ -120,10 +111,27 @@ if __name__ == "__main__":
     X_te, y_te, _ = make_windows(test, last_only=True)
     print(f"train windows {X_tr.shape}, val {X_va.shape}, test {X_te.shape}")
 
-    preds = []
+    preds, states = [], []
     for seed in range(N_SEEDS):
         model = train_one(X_tr, y_tr, X_va, y_va, seed)
         preds.append(predict(model, X_te))
+        states.append({k: v.clone() for k, v in model.state_dict().items()})
+
+    # Everything the API needs to reproduce these predictions.
+    MODELS_DIR.mkdir(exist_ok=True)
+    torch.save(
+        {
+            "states": states,
+            "features": FEATURES,
+            "low": low.to_dict(),
+            "span": span.to_dict(),
+            "window": WINDOW,
+            "rul_cap": RUL_CAP,
+            "hidden": HIDDEN,
+        },
+        MODEL_PATH,
+    )
+    print(f"Saved {N_SEEDS} models + scaler to {MODEL_PATH}")
 
     # Average of several seeds: smoother and more reliable than one run.
     y_pred = np.mean(preds, axis=0)

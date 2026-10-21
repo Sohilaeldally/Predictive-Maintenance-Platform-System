@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 from xgboost import Booster, DMatrix
 
@@ -8,14 +10,25 @@ from db.queries import get_engine_history,save_prediction
 
 MODEL_PATH = MODELS_DIR / "final_xgboost_v3.json"
 
+# Which model the API serves: "xgboost" (default) or "gru" (needs PyTorch).
+MODEL_TYPE = os.environ.get("MODEL_TYPE", "xgboost").lower()
+
 
 def load_model():
+    if MODEL_TYPE == "gru":
+        from ml.gru_predict import GRUBundle
+
+        return GRUBundle()
+
     model = Booster()
     model.load_model(MODEL_PATH)
     return model
 
 
 def predict_rul(df: pd.DataFrame, model) -> float:
+    if MODEL_TYPE == "gru":
+        return model.predict_rul(df)
+
     df = df.copy()
 
     df = df.sort_values(

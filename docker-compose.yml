@@ -16,10 +16,14 @@ services:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
 
   api:
-    build: .
+    build:
+      context: .
+      args:
+        INSTALL_TORCH: ${INSTALL_TORCH:-0}
     container_name: predmaint_api
 
     environment:
+      MODEL_TYPE: ${MODEL_TYPE:-xgboost}
       DB_HOST: postgres
       DB_PORT: 5432
       POSTGRES_DB: predictive_maintenance_db
