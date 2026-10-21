@@ -93,7 +93,7 @@ has never seen. Reproduce with `cd src && python -m ml.cross_validation`.
 | RMSE | 16.71 ± 0.78 |
 | MAE | 12.02 ± 0.66 |
 | R² | 0.84 ± 0.01 |
-| MAE where true RUL ≤ 30 (the alert zone) | 7.65 ± 1.44 |
+| MAE where true RUL ≤ 30 (the alert zone) | 7.59 ± 1.44 |
 
 The scores are stable across folds and close to the test-set RMSE (18.12). The
 test number is a bit higher because it is measured only at each engine's last
