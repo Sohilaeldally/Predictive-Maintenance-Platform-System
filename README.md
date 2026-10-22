@@ -102,6 +102,34 @@ test set, last cycle of each engine):
 | Engines really at RUL ≤ 15 caught as CRITICAL (of 10) | 8, 0 false alarms | 8, 0 false alarms |
 | Engines really at RUL ≤ 30 caught as WARNING or worse (of 25) | 18, 1 false alarm | **22**, 1 false alarm |
 
+**Are the alerts early or late?** The tables above look at the last cycle only.
+`python -m ml.alert_timing` replays every test engine cycle by cycle and
+compares the first cycle where each model raised an alert with the cycle where
+it should have (failure cycle minus the threshold). A positive lag means the
+alert came late, a negative one means early; "on time" is within ±5 cycles.
+
+| CRITICAL (RUL ≤ 15), 10 engines really there | XGBoost v3 | GRU |
+|---|---|---|
+| On time (±5 cycles) | 5 | **8** |
+| Late (> 5 cycles) | 2 | **0** |
+| Early (> 5 cycles) | 1 | 0 |
+| Never flagged | 2 | 2 |
+| Median lag | +4.0 cycles | **+0.5 cycles** |
+
+| WARNING (RUL ≤ 30), 25 engines really there | XGBoost v3 | GRU |
+|---|---|---|
+| On time (±5 cycles) | 10 | **13** |
+| Late (> 5 cycles) | 7 | 7 |
+| Early (> 5 cycles) | 1 | 2 |
+| Never flagged | 7 | **3** |
+| Median lag | +3.5 cycles | **+1.5 cycles** |
+
+For CRITICAL, the GRU was never late and 8 of 10 alerts came within 5 cycles of
+the right moment; XGBoost was late for 2 engines. For WARNING the GRU flags far
+more engines, but 7 alerts are still late, so that is where there is room to
+improve. This is only 100 test engines and the ±5 tolerance is a choice, so
+read it as a clear trend, not a precise measurement.
+
 **Which model does the API serve?** XGBoost by default: it is tiny and fast and
 needs no PyTorch. To serve the GRU instead, set in `.env`:
 
@@ -162,9 +190,10 @@ The logic lives in `src/api/services/alerts.py`.
 ```
 PMPS/
 ├── Dockerfile                  # Builds the API image
-├── docker-compose.yml          # PostgreSQL + API services
-├── requirements.txt
-├── .env.example                # Copy to .env and set POSTGRES_PASSWORD
+├── docker-compose.yml          # PostgreSQL + API + dashboard services
+├── requirements.txt            # Development (notebooks, training, tests)
+├── requirements-api.txt        # Runtime-only dependencies for the API image
+├── .env.example                # Copy to .env and set POSTGRES_PASSWORD (+ optional GRU)
 ├── database/
 │   └── schema.sql              # sensor_readings, predictions, simulation_predictions
 ├── .github/workflows/ci.yml    # CI: tests + Docker builds
@@ -196,6 +225,7 @@ PMPS/
     │   ├── gru_model.py          # Trains the GRU, saves models/gru_v1.pt
     │   ├── gru_predict.py        # GRU inference (used when MODEL_TYPE=gru)
     │   ├── compare_alerts.py     # XGBoost vs GRU on alert metrics
+    │   ├── alert_timing.py       # Are the alerts early or late? (XGBoost vs GRU)
     │   ├── predict.py
     │   └── xgboost_v1.py / xgboost_v2.py / xgboost_v3.py
     ├── db/                     # Everything that touches PostgreSQL
@@ -330,6 +360,16 @@ latest prediction for every engine, colour-coded by status.
   <img src="docs/images/dashboard_simulation.png" alt="Simulation tab" width="800">
 </p>
 
+Same simulation (engine 34) with the API serving the GRU. The alerts arrive
+close to the right moment (first WARNING at cycle 184, first CRITICAL at cycle
+191; the true crossings are at 180 and 195). The MAE of 22.2 is inflated by
+the first ~90 cycles, where the true RUL is above the 125 cap used in training
+and the model predicts a flat ~125 by design:
+
+<p align="center">
+  <img src="docs/images/dashboard_gru.png" alt="Simulation of engine 34 served by the GRU" width="800">
+</p>
+
 **Latest predictions tab** — status counts (CRITICAL / WARNING / NORMAL) and
 the colour-coded table for all engines:
 
@@ -344,7 +384,7 @@ Or run it locally (the API must be up):
 
 ```bash
 pip install -r dashboard/requirements.txt
-streamlit run dashboard/app.py
+python -m streamlit run dashboard/app.py
 ```
 
 It opens at http://localhost:8501. To point it at another API, set the
