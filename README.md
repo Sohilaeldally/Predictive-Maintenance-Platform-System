@@ -32,7 +32,7 @@ Alert emails sent by the n8n workflow (shown in a Mailtrap sandbox inbox):
 ## Pipeline
 
 ```
-Sensor Data → Cleaning / Feature Engineering → XGBoost Model → RUL Prediction
+Sensor Data → Cleaning / Feature Engineering → GRU (or XGBoost) → RUL Prediction
             → PostgreSQL → FastAPI → n8n Automation → Maintenance Alerts (email)
 ```
 
@@ -64,7 +64,7 @@ reproducible with a script in `src/ml/`:
 |---|---|---|
 | v1 | Baseline XGBoost | `models/final_xgboost.json` |
 | v2 | + rolling-window features | `models/final_xgboost_v2.json` |
-| v3 | + rolling features + RUL cap 125 (**used by the API**) | `models/final_xgboost_v3.json` |
+| v3 | + rolling features + RUL cap 125 (XGBoost option, `MODEL_TYPE=xgboost`) | `models/final_xgboost_v3.json` |
 
 ### Results
 
@@ -75,8 +75,8 @@ each) — see `notebooks/05_test_evaluation.ipynb`:
 |---|---|---|---|---|
 | v1 | 25.29 | 18.32 | 0.63 | 5228 |
 | v2 | 25.62 | 19.03 | 0.62 | 4741 |
-| v3 (XGBoost, used by the API) | 18.12 | 13.48 | 0.81 | 619 |
-| GRU (optional, `MODEL_TYPE=gru`) | **14.83** | **11.15** | **0.87** | **406** |
+| v3 (XGBoost) | 18.12 | 13.48 | 0.81 | 619 |
+| GRU (**used by the API by default**) | **14.83** | **11.15** | **0.87** | **406** |
 
 The RUL cap (v3) gave the biggest improvement: early in an engine's life the
 sensors show no degradation, so predicting an exact large RUL is not possible
@@ -130,20 +130,22 @@ more engines, but 7 alerts are still late, so that is where there is room to
 improve. This is only 100 test engines and the ±5 tolerance is a choice, so
 read it as a clear trend, not a precise measurement.
 
-**Which model does the API serve?** XGBoost by default: it is tiny and fast and
-needs no PyTorch. To serve the GRU instead, set in `.env`:
+**Which model does the API serve?** The GRU, by default (`MODEL_TYPE=gru`). The
+Docker image therefore includes the CPU build of PyTorch (about 200 MB extra;
+the first build takes longer) and the trained GRU (3 seeds + scaler) is in
+`models/gru_v1.pt`. XGBoost is still available because it is tiny, fast and
+needs no PyTorch: for a smaller image set in `.env`
 
 ```
-MODEL_TYPE=gru
-INSTALL_TORCH=1
+MODEL_TYPE=xgboost
+INSTALL_TORCH=0
 ```
 
-and rebuild (`docker-compose up -d --build`). `INSTALL_TORCH=1` adds the CPU
-build of PyTorch to the API image; the trained GRU (3 seeds + scaler) is in
-`models/gru_v1.pt`. Without Docker, `pip install torch` and
-`MODEL_TYPE=gru uvicorn api.main:app` from `src/`. The thresholds, database
-and n8n workflow are unchanged. The GRU reads the engine's last 30 cycles, so
-for engines with a shorter history the first row is repeated as padding.
+and rebuild (`docker-compose up -d --build`). Without Docker, the GRU needs
+`pip install torch`; run `MODEL_TYPE=xgboost uvicorn api.main:app` from `src/`
+to use XGBoost instead. The thresholds, database and n8n workflow are
+unchanged. The GRU reads the engine's last 30 cycles, so for engines with a
+shorter history the first row is repeated as padding.
 
 ### Cross-validation (engine-level)
 
@@ -307,7 +309,7 @@ cd src
 python -m ml.xgboost_v3
 ```
 
-The API loads `models/final_xgboost_v3.json`.
+The API loads `models/gru_v1.pt` by default (or `models/final_xgboost_v3.json` when `MODEL_TYPE=xgboost`).
 
 ### Running the API without Docker
 

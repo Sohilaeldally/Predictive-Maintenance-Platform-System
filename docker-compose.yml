@@ -19,11 +19,11 @@ services:
     build:
       context: .
       args:
-        INSTALL_TORCH: ${INSTALL_TORCH:-0}
+        INSTALL_TORCH: ${INSTALL_TORCH:-1}
     container_name: predmaint_api
 
     environment:
-      MODEL_TYPE: ${MODEL_TYPE:-xgboost}
+      MODEL_TYPE: ${MODEL_TYPE:-gru}
       DB_HOST: postgres
       DB_PORT: 5432
       POSTGRES_DB: predictive_maintenance_db
