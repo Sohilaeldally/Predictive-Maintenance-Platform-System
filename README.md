@@ -386,20 +386,14 @@ see predicted vs actual RUL with the WARNING / CRITICAL threshold lines, the
 MAE, and the first cycle where each status was reached. A second tab shows the
 latest prediction for every engine, colour-coded by status.
 
-**Simulation tab** — predicted vs actual RUL for one engine:
+**Simulation tab** — predicted vs actual RUL for engine 34, served by the GRU.
+The alerts arrive close to the right moment (first WARNING at cycle 184, first
+CRITICAL at cycle 191; the true crossings are at 180 and 195). The MAE of 22.2
+is inflated by the first ~90 cycles, where the true RUL is above the 125 cap
+used in training and the model predicts a flat ~125 by design:
 
 <p align="center">
-  <img src="docs/images/dashboard_simulation.png" alt="Simulation tab" width="800">
-</p>
-
-Same simulation (engine 34) with the API serving the GRU. The alerts arrive
-close to the right moment (first WARNING at cycle 184, first CRITICAL at cycle
-191; the true crossings are at 180 and 195). The MAE of 22.2 is inflated by
-the first ~90 cycles, where the true RUL is above the 125 cap used in training
-and the model predicts a flat ~125 by design:
-
-<p align="center">
-  <img src="docs/images/dashboard_gru.png" alt="Simulation of engine 34 served by the GRU" width="800">
+  <img src="docs/images/dashboard_gru.png" alt="Simulation tab (engine 34, GRU)" width="800">
 </p>
 
 **Latest predictions tab** — status counts (CRITICAL / WARNING / NORMAL) and
