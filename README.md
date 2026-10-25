@@ -1,6 +1,6 @@
 # PMPS — Predictive Maintenance Platform System
 
-[![CI](https://github.com/Sohilaeldally/PMPS/actions/workflows/ci.yml/badge.svg)](https://github.com/Sohilaeldally/PMPS/actions/workflows/ci.yml)
+[![CI](https://github.com/Sohilaeldally/Predictive-Maintenance-Platform-System/actions/workflows/ci.yml/badge.svg)](https://github.com/Sohilaeldally/Predictive-Maintenance-Platform-System/actions/workflows/ci.yml)
 
 End-to-end predictive maintenance pipeline for turbofan jet engines, built on
 NASA's C-MAPSS (FD001) dataset. It predicts each engine's **Remaining Useful
@@ -36,7 +36,7 @@ Sensor Data → Cleaning / Feature Engineering → GRU (or XGBoost) → RUL Pred
             → PostgreSQL → FastAPI → n8n Automation → Maintenance Alerts (email)
 ```
 
-Everything runs in Docker (PostgreSQL + API); n8n runs alongside it as a
+Everything runs in Docker (PostgreSQL + API + dashboard); n8n runs alongside it as a
 separate container.
 
 ## Dataset
@@ -173,33 +173,23 @@ matters for alerts.
 
 `python -m ml.track_experiments` (from `src/`, needs `pip install mlflow`)
 evaluates every saved model (XGBoost v1, v2, v3 and the GRU) on the test set
-and logs its parameters, metrics and model file to a local MLflow database.
-Browse and compare the runs in the MLflow UI, from the project root:
+and logs its parameters, metrics and model file to a local MLflow database, so
+the runs can be compared side by side. Browse them from the project root:
 
 ```bash
 mlflow ui --backend-store-uri sqlite:///mlflow.db
 ```
 
-then open http://localhost:5000. The logged metrics are RMSE, MAE, R², the
-C-MAPSS score and the MAE where the true RUL is ≤ 30 (the alert zone). They
-match the results table above. One thing the alert-zone column shows: the RUL
-cap of v3 improves the overall error, but v1 is slightly better than v3 inside
-the alert zone (MAE 9.4 vs 10.2); only the GRU is clearly better there (3.3).
-
-
-All model versions are logged to MLflow (params, metrics, model artifact) so runs can be compared side by side.
+then open http://localhost:5000 (Model training → Runs). The logged metrics are
+RMSE, MAE, R², the C-MAPSS score and the MAE where the true RUL is ≤ 30 (the
+alert zone). They match the results table above. One thing the alert-zone
+column shows: the RUL cap of v3 improves the overall error, but v1 is slightly
+better than v3 inside the alert zone (MAE 9.4 vs 10.2); only the GRU is clearly
+better there (3.3).
 
 <p align="center">
   <img src="docs/images/mlflow_runs.png" alt="MLflow run comparison" width="800">
 </p>
-
-To reproduce:
-
-```bash
-cd src
-python -m ml.track_experiments
-mlflow ui --backend-store-uri sqlite:///mlflow.db
-```
 
 ### Explainability (SHAP)
 
@@ -210,16 +200,6 @@ after `time_cycles`.
 
 <p align="center">
   <img src="docs/images/shap_summary.png" alt="SHAP summary plot" width="650">
-</p>
-
-A simpler way to read the same result: one feature at a time, with the
-feature's value on the x axis and its effect on the predicted RUL (in cycles)
-on the y axis. Above 0 the feature adds life, below 0 it removes life. For
-example, once the 5-cycle average of sensor 11 passes about 47.6, its effect
-drops from about +5 to -20 cycles.
-
-<p align="center">
-  <img src="docs/images/shap_dependence.png" alt="Effect of each feature on the prediction" width="700">
 </p>
 
 Reading the plot: each dot is one row; red = high feature value, blue = low.
@@ -320,8 +300,8 @@ PMPS/
 ### 1. Clone and install dependencies
 
 ```bash
-git clone https://github.com/Sohilaeldally/PMPS.git
-cd PMPS
+git clone https://github.com/Sohilaeldally/Predictive-Maintenance-Platform-System.git
+cd Predictive-Maintenance-Platform-System
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
@@ -510,8 +490,9 @@ Unit tests cover the CRITICAL / WARNING / NORMAL thresholds.
 
 ## Tech stack
 
-Python · pandas · scikit-learn · XGBoost · FastAPI · PostgreSQL · psycopg2 ·
-Docker / Docker Compose · n8n
+Python · pandas · scikit-learn · XGBoost · PyTorch (GRU) · SHAP · MLflow ·
+FastAPI · Streamlit · PostgreSQL · psycopg2 · Docker / Docker Compose ·
+GitHub Actions · n8n
 
 ## License
 
