@@ -167,6 +167,35 @@ observed cycle, a harder point than the average cycle. Near failure (RUL ≤ 30)
 the error is smaller, about 7.7 cycles on average, which is the zone that
 matters for alerts.
 
+### Explainability (SHAP)
+
+`python -m ml.explain` (from `src/`, needs `pip install shap`) explains the
+XGBoost v3 model with SHAP: each feature gets a contribution, in cycles, to
+every prediction. Sensor 11, 4, 9 and 14 (and their rolling means) matter most
+after `time_cycles`.
+
+<p align="center">
+  <img src="docs/images/shap_summary.png" alt="SHAP summary plot" width="650">
+</p>
+
+Reading the plot: each dot is one row; red = high feature value, blue = low.
+For example, high `sensor_4` and `sensor_11` rolling means push the predicted
+RUL down by 15-20 cycles (the engine is degrading), while low values push it
+up. The local view shows why engine 34 is predicted at 9.5 cycles when the
+average prediction is 86.8: the recent `sensor_11` and `sensor_4` averages
+alone pull it down by about 50 cycles.
+
+<p align="center">
+  <img src="docs/images/shap_engine34.png" alt="SHAP explanation for engine 34" width="600">
+</p>
+
+**A finding worth noting:** `time_cycles` is the single most important feature
+of the XGBoost model. On FD001 this works because every engine degrades the
+same way, but it is partly a shortcut: it learns "an engine that has run for
+many cycles is close to the end", which would not hold on engines with
+different lifetimes. The GRU is trained without `time_cycles` and still
+performs better, which suggests it relies on the sensor behaviour itself.
+
 **Limitations:** trained and evaluated on FD001 only (one operating condition,
 one fault mode); predicts from the latest cycle's features and rolling
 windows, with no uncertainty estimate.
@@ -228,6 +257,7 @@ PMPS/
     │   ├── gru_predict.py        # GRU inference (used when MODEL_TYPE=gru)
     │   ├── compare_alerts.py     # XGBoost vs GRU on alert metrics
     │   ├── alert_timing.py       # Are the alerts early or late? (XGBoost vs GRU)
+    │   ├── explain.py            # SHAP explanations for the XGBoost model
     │   ├── predict.py
     │   └── xgboost_v1.py / xgboost_v2.py / xgboost_v3.py
     ├── db/                     # Everything that touches PostgreSQL
