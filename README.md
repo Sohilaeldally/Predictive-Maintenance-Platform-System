@@ -102,6 +102,8 @@ test set, last cycle of each engine):
 | Engines really at RUL ≤ 15 caught as CRITICAL (of 10) | 8, 0 false alarms | 8, 0 false alarms |
 | Engines really at RUL ≤ 30 caught as WARNING or worse (of 25) | 18, 1 false alarm | **22**, 1 false alarm |
 
+
+
 **Are the alerts early or late?** The tables above look at the last cycle only.
 `python -m ml.alert_timing` replays every test engine cycle by cycle and
 compares the first cycle where each model raised an alert with the cycle where
@@ -183,6 +185,21 @@ C-MAPSS score and the MAE where the true RUL is ≤ 30 (the alert zone). They
 match the results table above. One thing the alert-zone column shows: the RUL
 cap of v3 improves the overall error, but v1 is slightly better than v3 inside
 the alert zone (MAE 9.4 vs 10.2); only the GRU is clearly better there (3.3).
+
+
+All model versions are logged to MLflow (params, metrics, model artifact) so runs can be compared side by side.
+
+<p align="center">
+  <img src="docs/images/mlflow_runs.png" alt="MLflow run comparison" width="800">
+</p>
+
+To reproduce:
+
+```bash
+cd src
+python -m ml.track_experiments
+mlflow ui --backend-store-uri sqlite:///mlflow.db
+```
 
 ### Explainability (SHAP)
 
