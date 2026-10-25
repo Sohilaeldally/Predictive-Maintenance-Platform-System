@@ -8,3 +8,8 @@ __pycache__/
 
 
 .pytest_cache
+
+# MLflow (generated locally)
+mlflow.db
+mlartifacts/
+mlruns/

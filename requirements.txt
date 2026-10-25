@@ -13,3 +13,4 @@ psycopg2-binary>=2.9.9
 jupyter>=1.0.0
 pytest>=8.0.0
 shap>=0.45.0
+mlflow>=2.14.0

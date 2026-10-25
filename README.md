@@ -167,6 +167,23 @@ observed cycle, a harder point than the average cycle. Near failure (RUL ≤ 30)
 the error is smaller, about 7.7 cycles on average, which is the zone that
 matters for alerts.
 
+### Experiment tracking (MLflow)
+
+`python -m ml.track_experiments` (from `src/`, needs `pip install mlflow`)
+evaluates every saved model (XGBoost v1, v2, v3 and the GRU) on the test set
+and logs its parameters, metrics and model file to a local MLflow database.
+Browse and compare the runs in the MLflow UI, from the project root:
+
+```bash
+mlflow ui --backend-store-uri sqlite:///mlflow.db
+```
+
+then open http://localhost:5000. The logged metrics are RMSE, MAE, R², the
+C-MAPSS score and the MAE where the true RUL is ≤ 30 (the alert zone). They
+match the results table above. One thing the alert-zone column shows: the RUL
+cap of v3 improves the overall error, but v1 is slightly better than v3 inside
+the alert zone (MAE 9.4 vs 10.2); only the GRU is clearly better there (3.3).
+
 ### Explainability (SHAP)
 
 `python -m ml.explain` (from `src/`, needs `pip install shap`) explains the
@@ -176,6 +193,16 @@ after `time_cycles`.
 
 <p align="center">
   <img src="docs/images/shap_summary.png" alt="SHAP summary plot" width="650">
+</p>
+
+A simpler way to read the same result: one feature at a time, with the
+feature's value on the x axis and its effect on the predicted RUL (in cycles)
+on the y axis. Above 0 the feature adds life, below 0 it removes life. For
+example, once the 5-cycle average of sensor 11 passes about 47.6, its effect
+drops from about +5 to -20 cycles.
+
+<p align="center">
+  <img src="docs/images/shap_dependence.png" alt="Effect of each feature on the prediction" width="700">
 </p>
 
 Reading the plot: each dot is one row; red = high feature value, blue = low.
@@ -258,6 +285,7 @@ PMPS/
     │   ├── compare_alerts.py     # XGBoost vs GRU on alert metrics
     │   ├── alert_timing.py       # Are the alerts early or late? (XGBoost vs GRU)
     │   ├── explain.py            # SHAP explanations for the XGBoost model
+    │   ├── track_experiments.py  # Logs all model versions to MLflow
     │   ├── predict.py
     │   └── xgboost_v1.py / xgboost_v2.py / xgboost_v3.py
     ├── db/                     # Everything that touches PostgreSQL
