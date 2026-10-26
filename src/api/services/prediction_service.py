@@ -8,7 +8,8 @@ from db.queries import (
     get_simulation_predictions,
     save_simulation_predictions,
 )
-from ml.predict import predict_engine_from_db, load_model, simulate_engine_history
+from ml.intervals import add_interval
+from ml.predict import MODEL_TYPE, predict_engine_from_db, load_model, simulate_engine_history
 from api.services.alerts import get_maintenance_status
 
 from config import DATA_DIR
@@ -24,6 +25,7 @@ def get_latest_predictions_with_status():
             "predicted_rul": row[2],
             "prediction_time": row[3],
             "maintenance_status": get_maintenance_status(float(row[2])),
+            **add_interval(float(row[2]), MODEL_TYPE),
         }
         for row in rows
     ]
@@ -56,6 +58,7 @@ def create_prediction(engine_id: int):
         "engine_id": engine_id,
         "predicted_rul": predicted_rul,
         "maintenance_status": status,
+        **add_interval(predicted_rul, MODEL_TYPE),
     }
 
 
@@ -80,7 +83,12 @@ def run_all_predictions():
 
 
 def get_simulation_results(simulation_id: str):
-    return get_simulation_predictions(simulation_id)
+    rows = get_simulation_predictions(simulation_id)
+
+    return [
+        {**row, **add_interval(float(row["predicted_rul"]), MODEL_TYPE)}
+        for row in rows
+    ]
 
 
 

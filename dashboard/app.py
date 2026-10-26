@@ -162,13 +162,34 @@ with simulation_tab:
             )
             return rule + text
 
+        layers = [lines]
+        has_band = {"rul_lower", "rul_upper"} <= set(df.columns) and df["rul_lower"].notna().any()
+        if has_band:
+            band = (
+                alt.Chart(df)
+                .mark_area(opacity=0.15, color="#2563eb")
+                .encode(
+                    x="cycle:Q",
+                    y=alt.Y("rul_lower:Q", title="RUL (cycles)"),
+                    y2="rul_upper:Q",
+                )
+            )
+            layers = [band, lines]
+
         chart = alt.layer(
-            lines,
+            *layers,
             threshold_line(warning_rul, "#d97706", f"WARNING <= {warning_rul}"),
             threshold_line(critical_rul, "#dc2626", f"CRITICAL <= {critical_rul}"),
         ).properties(height=400, width="container")
 
         st.altair_chart(chart)
+
+        if has_band:
+            st.caption(
+                "The blue band is the 80% prediction interval: about 8 times in 10 the "
+                "true RUL falls inside it. It is narrow close to failure and wide when "
+                "the engine is still healthy."
+            )
 
         if not has_actual:
             st.caption("This simulation has no actual RUL values saved, so only the prediction is shown.")
@@ -206,10 +227,17 @@ with latest_tab:
     if not latest:
         st.info("No predictions yet. Press the button above to create them.")
     else:
-        table = pd.DataFrame(latest)[
+        latest_df = pd.DataFrame(latest)
+        table = latest_df[
             ["engine_id", "predicted_rul", "maintenance_status", "prediction_time"]
-        ]
+        ].copy()
         table["predicted_rul"] = table["predicted_rul"].round(1)
+        if "rul_lower" in latest_df.columns and latest_df["rul_lower"].notna().any():
+            table["likely_range (80%)"] = (
+                latest_df["rul_lower"].round(0).astype("Int64").astype(str)
+                + " - "
+                + latest_df["rul_upper"].round(0).astype("Int64").astype(str)
+            )
         table = table.sort_values("predicted_rul").reset_index(drop=True)
 
         counts = table["maintenance_status"].value_counts()

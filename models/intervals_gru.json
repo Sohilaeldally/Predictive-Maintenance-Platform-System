@@ -1,0 +1,28 @@
+{
+  "model": "gru",
+  "coverage": 0.8,
+  "bin_edges": [
+    0,
+    15,
+    30,
+    60,
+    100,
+    1000000000.0
+  ],
+  "half_width": [
+    3.61,
+    5.96,
+    11.25,
+    26.91,
+    14.16
+  ],
+  "n_per_bin": [
+    1490,
+    1392,
+    2796,
+    3801,
+    11121
+  ],
+  "calibration_source": "5-fold GroupKFold out-of-fold GRU, 100 engines",
+  "rul_cap": 125
+}

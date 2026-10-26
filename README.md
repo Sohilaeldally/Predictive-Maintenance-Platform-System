@@ -191,6 +191,48 @@ better there (3.3).
   <img src="docs/images/mlflow_runs.png" alt="MLflow run comparison" width="800">
 </p>
 
+### Prediction intervals
+
+A single number hides how sure the model is. `python -m ml.intervals` (from
+`src/`) adds an **80% prediction interval** to every prediction, e.g. "RUL 20,
+probably between 14 and 26". It uses split-conformal prediction, in plain words:
+
+1. Collect predictions the model made on engines it never trained on
+   (out-of-fold predictions of a 5-fold GroupKFold, for both XGBoost and the GRU).
+2. Group them by predicted RUL and, for each group, keep the error that 80% of
+   the predictions stayed within.
+3. The interval is `predicted RUL ± that error`, looked up from the group the
+   new prediction falls in. No retraining and no database change: the table is
+   saved in `models/intervals_<model>.json` and the API adds `rul_lower`,
+   `rul_upper` and `interval_coverage` to its responses.
+
+Half width (cycles) by predicted RUL:
+
+| Predicted RUL | 0-15 | 15-30 | 30-60 | 60-100 | 100+ |
+|---|---|---|---|---|---|
+| GRU | ±3.6 | ±6.0 | ±11.2 | ±26.9 | ±14.2 |
+| XGBoost v3 | ±7.1 | ±10.1 | ±19.6 | ±34.5 | ±15.2 |
+
+The interval is narrow close to failure, where the alerts matter, and wide when
+the engine is still healthy. It is also much tighter for the GRU. Checked on
+the test set (100 engines, last cycle, not used to build the intervals):
+
+| | GRU | XGBoost v3 |
+|---|---|---|
+| Target coverage | 80% | 80% |
+| Real coverage, true RUL ≤ 30 (25 engines) | **80%** | 80% |
+| Real coverage, all 100 engines | 67% | 76% |
+| Mean interval width, true RUL ≤ 30 | **11.7 cycles** | 26.0 cycles |
+| Mean interval width, all engines | 27.5 cycles | 41.3 cycles |
+
+In the alert zone the intervals deliver what they promise. Over all engines the
+GRU's are somewhat too narrow (67% instead of 80%): the model is trained on a
+capped RUL (125) but the test truth is not, so for the 11 engines that really
+have more than 125 cycles left no interval based on the cap can be right, and a
+single test cut-off is harder than the average cycle. Treat the intervals of
+healthy engines (predicted RUL above 100) as a rough guide only. The dashboard
+draws the band around the predicted RUL and shows the range for every engine.
+
 ### Explainability (SHAP)
 
 `python -m ml.explain` (from `src/`, needs `pip install shap`) explains the
@@ -222,7 +264,8 @@ performs better, which suggests it relies on the sensor behaviour itself.
 
 **Limitations:** trained and evaluated on FD001 only (one operating condition,
 one fault mode); predicts from the latest cycle's features and rolling
-windows, with no uncertainty estimate.
+windows. The prediction intervals are only roughly calibrated for engines far
+from failure (see above).
 
 ## Maintenance status rules
 
@@ -269,7 +312,8 @@ PMPS/
 ├── n8n/
 │   └── pmps_workflow.json      # Exported n8n alert workflow (import into n8n)
 ├── tests/
-│   └── test_alerts.py          # Unit tests for the status thresholds
+│   ├── test_alerts.py          # Unit tests for the status thresholds
+│   └── test_intervals.py       # Unit tests for the prediction intervals
 ├── LICENSE
 └── src/
     ├── config.py               # Paths, model features, DB settings
@@ -282,6 +326,7 @@ PMPS/
     │   ├── compare_alerts.py     # XGBoost vs GRU on alert metrics
     │   ├── alert_timing.py       # Are the alerts early or late? (XGBoost vs GRU)
     │   ├── explain.py            # SHAP explanations for the XGBoost model
+    │   ├── intervals.py          # 80% prediction intervals (conformal), saved in models/
     │   ├── track_experiments.py  # Logs all model versions to MLflow
     │   ├── predict.py
     │   └── xgboost_v1.py / xgboost_v2.py / xgboost_v3.py
@@ -380,7 +425,7 @@ This needs PostgreSQL running (`docker-compose up -d postgres`).
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/` | Health check |
-| GET | `/predictions/latest` | Latest prediction per engine, with `maintenance_status` |
+| GET | `/predictions/latest` | Latest prediction per engine, with `maintenance_status` and the 80% interval (`rul_lower`, `rul_upper`) |
 | GET | `/predictions/history/{engine_id}` | Full prediction history for one engine |
 | POST | `/predictions/run-all` | Run and store a new prediction for **every** engine; returns counts per status |
 | POST | `/predictions/{engine_id}` | Run and store a new RUL prediction for one engine |
@@ -408,7 +453,7 @@ without overwriting earlier runs. Results are stored in
 
 A Streamlit dashboard on top of the API: pick an engine, run a simulation, and
 see predicted vs actual RUL with the WARNING / CRITICAL threshold lines, the
-MAE, and the first cycle where each status was reached. A second tab shows the
+MAE, the 80% prediction interval as a shaded band, and the first cycle where each status was reached. A second tab shows the
 latest prediction for every engine, colour-coded by status.
 
 **Simulation tab** — predicted vs actual RUL for engine 34, served by the GRU.
@@ -486,7 +531,8 @@ them in your own n8n instance.
 pytest tests
 ```
 
-Unit tests cover the CRITICAL / WARNING / NORMAL thresholds.
+Unit tests cover the CRITICAL / WARNING / NORMAL thresholds and the prediction
+intervals.
 
 ## Tech stack
 

@@ -1,0 +1,28 @@
+{
+  "model": "xgboost",
+  "coverage": 0.8,
+  "bin_edges": [
+    0,
+    15,
+    30,
+    60,
+    100,
+    1000000000.0
+  ],
+  "half_width": [
+    7.11,
+    10.09,
+    19.59,
+    34.49,
+    15.18
+  ],
+  "n_per_bin": [
+    1230,
+    1499,
+    2558,
+    4977,
+    10367
+  ],
+  "calibration_source": "5-fold GroupKFold out-of-fold, 100 engines",
+  "rul_cap": 125
+}
