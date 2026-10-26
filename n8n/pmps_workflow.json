@@ -1,4 +1,5 @@
 {
+  "name": "PMPS",
   "nodes": [
     {
       "parameters": {
@@ -13,10 +14,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.4,
       "position": [
-        -300,
-        -16
+        368,
+        -48
       ],
-      "id": "b02c9529-b571-46bd-94c2-348b1e5cba2f",
+      "id": "a6c481d0-81ba-42bf-8647-e763102264f9",
       "name": "Schedule Trigger"
     },
     {
@@ -30,10 +31,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        -100,
-        -16
+        576,
+        -48
       ],
-      "id": "3f6c2d1e-8a4b-4c57-9e21-5b7d0a9c4e11",
+      "id": "3ce825ab-6d8c-49bf-b563-9a06135f98c8",
       "name": "Run all predictions"
     },
     {
@@ -44,10 +45,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        100,
-        -16
+        768,
+        -48
       ],
-      "id": "102bea8a-ece6-4e64-8102-e6867ba573de",
+      "id": "0fccd3cf-faa7-4938-a35c-6d5ee4a2a113",
       "name": "Get latest predictions"
     },
     {
@@ -77,24 +78,23 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2,
       "position": [
-        320,
-        -16
+        992,
+        -48
       ],
-      "id": "a1d4e7c9-5b2f-4e60-8c13-9f0b7d2a4e55",
+      "id": "f33bd310-a338-4ac6-b339-c0e34188b934",
       "name": "Needs attention (not NORMAL)"
     },
     {
       "parameters": {
-        "batchSize": 1,
         "options": {}
       },
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        560,
-        -16
+        1232,
+        -48
       ],
-      "id": "c2e8b5f1-6d94-4a07-b3a8-1e7c0d9f3a62",
+      "id": "87a7b001-962a-4035-8526-f841d949ed73",
       "name": "Send one at a time"
     },
     {
@@ -102,7 +102,7 @@
         "fromEmail": "alerts@example.com",
         "toEmail": "maintenance-team@example.com",
         "subject": "=🚨 Maintenance Alert — Engine {{ $json.engine_id }} ({{ $json.maintenance_status }})",
-        "html": "=<div style=\"font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;\">\n\n  <div style=\"background-color: {{ $json.maintenance_status === 'CRITICAL' ? '#dc2626' : '#f59e0b' }}; padding: 20px; text-align: center;\">\n    <h2 style=\"color: #ffffff; margin: 0; font-size: 20px;\">\n      ⚠️ Maintenance Alert\n    </h2>\n  </div>\n\n  <div style=\"padding: 24px; background-color: #ffffff;\">\n    <p style=\"font-size: 15px; color: #374151; margin: 0 0 16px 0;\">\n      Engine <strong>#{{ $json.engine_id }}</strong> requires attention.\n    </p>\n\n    <table style=\"width: 100%; border-collapse: collapse; font-size: 14px;\">\n      <tr>\n        <td style=\"padding: 8px 0; color: #6b7280;\">Status</td>\n        <td style=\"padding: 8px 0; text-align: right;\">\n          <span style=\"background-color: {{ $json.maintenance_status === 'CRITICAL' ? '#fee2e2' : '#fef3c7' }}; color: {{ $json.maintenance_status === 'CRITICAL' ? '#dc2626' : '#b45309' }}; padding: 4px 10px; border-radius: 4px; font-weight: bold;\">\n            {{ $json.maintenance_status }}\n          </span>\n        </td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; color: #6b7280;\">Predicted RUL</td>\n        <td style=\"padding: 8px 0; text-align: right; font-weight: bold; color: #111827;\">\n          {{ Math.round($json.predicted_rul) }} cycles\n        </td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; color: #6b7280;\">Prediction Time</td>\n        <td style=\"padding: 8px 0; text-align: right; color: #111827;\">\n          {{ $json.prediction_time }}\n        </td>\n      </tr>\n    </table>\n\n    <p style=\"font-size: 13px; color: #9ca3af; margin: 20px 0 0 0;\">\n      This is an automated alert from the PredMaint monitoring system.\n    </p>\n  </div>\n\n</div>",
+        "html": "=<div style=\"font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;\">\n\n  <div style=\"background-color: {{ $json.maintenance_status === 'CRITICAL' ? '#dc2626' : '#f59e0b' }}; padding: 20px; text-align: center;\">\n    <h2 style=\"color: #ffffff; margin: 0; font-size: 20px;\">\n      ⚠️ Maintenance Alert\n    </h2>\n  </div>\n\n  <div style=\"padding: 24px; background-color: #ffffff;\">\n    <p style=\"font-size: 15px; color: #374151; margin: 0 0 16px 0;\">\n      Engine <strong>#{{ $json.engine_id }}</strong> requires attention.\n    </p>\n\n    <table style=\"width: 100%; border-collapse: collapse; font-size: 14px;\">\n      <tr>\n        <td style=\"padding: 8px 0; color: #6b7280;\">Status</td>\n        <td style=\"padding: 8px 0; text-align: right;\">\n          <span style=\"background-color: {{ $json.maintenance_status === 'CRITICAL' ? '#fee2e2' : '#fef3c7' }}; color: {{ $json.maintenance_status === 'CRITICAL' ? '#dc2626' : '#b45309' }}; padding: 4px 10px; border-radius: 4px; font-weight: bold;\">\n            {{ $json.maintenance_status }}\n          </span>\n        </td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; color: #6b7280;\">Predicted RUL</td>\n        <td style=\"padding: 8px 0; text-align: right; font-weight: bold; color: #111827;\">\n          {{ Math.round($json.predicted_rul) }} cycles\n        </td>\n      </tr>\n          <tr>\n        <td style=\"padding: 8px 0; color: #6b7280;\">Likely range (80%)</td>\n        <td style=\"padding: 8px 0; text-align: right; color: #111827;\">\n          {{ $json.rul_lower !== null && $json.rul_lower !== undefined ? Math.round($json.rul_lower) + ' - ' + Math.round($json.rul_upper) + ' cycles' : 'n/a' }}\n        </td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; color: #6b7280;\">Prediction Time</td>\n        <td style=\"padding: 8px 0; text-align: right; color: #111827;\">\n          {{ $json.prediction_time }}\n        </td>\n      </tr>\n    </table>\n\n    <p style=\"font-size: 13px; color: #9ca3af; margin: 20px 0 0 0;\">\n      This is an automated alert from the PredMaint monitoring system.\n    </p>\n  </div>\n\n</div>",
         "options": {
           "appendAttribution": false
         }
@@ -110,35 +110,35 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        880,
-        -16
+        1552,
+        -48
       ],
-      "id": "e5e7ba84-f13b-4430-99ac-a2819452e785",
+      "id": "80780895-b2c6-41fd-a77b-dda312b71d86",
       "name": "Send an Email",
       "webhookId": "a3c66f6e-5c3d-4fa0-b42f-4cfc8e6ad4b1",
       "credentials": {
         "smtp": {
-          "id": "",
+          "id": "RFcZhEJp3dByM6oD",
           "name": "SMTP account"
         }
       }
     },
     {
       "parameters": {
-        "amount": 12,
-        "unit": "seconds"
+        "amount": 12
       },
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        1100,
-        -16
+        1776,
+        -48
       ],
-      "id": "d9f3a6b2-8e15-4c71-a0d4-5b2e7f1c8a93",
+      "id": "e6cbbc9e-2bc7-4fcb-a733-21adfcc37bc9",
       "name": "Wait 12s",
       "webhookId": "e4b7c1a8-3f60-4d92-8a5e-6c0d1b9f2e74"
     }
   ],
+  "pinData": {},
   "connections": {
     "Schedule Trigger": {
       "main": [
@@ -219,9 +219,17 @@
       ]
     }
   },
-  "pinData": {},
-  "meta": {
-    "templateCredsSetupCompleted": true
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
   },
-  "name": "PMPS"
+  "versionId": "92b19fd6-e94f-41eb-919b-b820038d24cf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6deb012bdd62c6818a59135687d7f97835a228a2c7afdaa30a9e5399806f66b8"
+  },
+  "nodeGroups": [],
+  "id": "WRoNvweKQRCU4jnG",
+  "tags": []
 }
